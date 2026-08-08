@@ -1193,11 +1193,13 @@
       // Dynamically extract clean topic title from API currentTopic or question text
       let cleanTopic = currentTopic;
       if (!cleanTopic) {
-        const match = questionReply.match(/Question \d+ \(([^—)]+)/);
+        const match = questionReply.match(/Question \d+ \(([^—)]+)/) || questionReply.match(/To start us off on ([^:]+):/);
         if (match && match[1]) {
           cleanTopic = match[1].trim();
+        } else if (selectedCandidate && Array.isArray(selectedCandidate.rankedTopics) && selectedCandidate.rankedTopics[0]) {
+          cleanTopic = selectedCandidate.rankedTopics[0].title;
         } else {
-          cleanTopic = 'Embeddings & Vector Search';
+          cleanTopic = 'Technical System Architecture';
         }
       }
 

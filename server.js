@@ -62,7 +62,7 @@ app.post('/api/interview', async (req, res, next) => {
 
       await sessionService.createSession(sessionId, candidateId, state);
 
-      const responsePayload = { reply: greeting, done: false };
+      const responsePayload = { reply: greeting, done: false, currentTopic: state.currentTopic };
       
       // Response Validation
       const respVal = validateInterviewResponse(responsePayload);
