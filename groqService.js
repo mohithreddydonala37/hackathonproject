@@ -309,13 +309,13 @@ Return ONLY a raw JSON object matching this EXACT schema:
   "next": ["string (concrete learning/career recommendation addressing gaps)", "string", "string"]
 }
 Rules:
-- Strengths MUST be grounded ONLY in demonstrated evidence from the interview.
-- Gaps MUST reflect demonstrated weak/incomplete answers or explicit cohort gaps. Do NOT label unasked topics as gaps.
+- Summary MUST be factual and based strictly on demonstrated interview performance. Do NOT include commit days, cohort stats, or unverified claims.
+- Strengths MUST be grounded ONLY in demonstrated evidence from the interview. Do NOT repeat the same topic or competency.
+- Gaps MUST reflect demonstrated weak/incomplete answers. Do NOT label unasked topics as gaps.
 - Recommendations MUST directly address the identified gaps.
 - Output ONLY valid JSON. No markdown wrappers.`;
 
     const userPrompt = `Candidate: ${candidate.name} (${candidate.jobRole}, ${candidate.yearsExperience} yrs exp)
-Cohort Stats: ${candidate.commitDays} active commit days, ${candidate.missionsCompleted} completed missions
 Covered Days: ${(context.coveredCurriculumDays || []).join(', ')}
 
 Demonstrated Interview Evaluation Records:
@@ -341,12 +341,8 @@ Synthesize the final debrief report.`;
     if (!Array.isArray(parsed.gaps) || parsed.gaps.length === 0) return null;
     if (!Array.isArray(parsed.next) || parsed.next.length === 0) return null;
 
-    return {
-      summary: parsed.summary.trim(),
-      strengths: parsed.strengths.map(s => String(s).trim()).filter(Boolean),
-      gaps: parsed.gaps.map(g => String(g).trim()).filter(Boolean),
-      next: parsed.next.map(n => String(n).trim()).filter(Boolean)
-    };
+    const { normalizeFeedbackReport } = require('./interviewPlanner');
+    return normalizeFeedbackReport(parsed, context);
   } catch (err) {
     console.warn('[GroqService] Final feedback JSON parsing failed, using fallback.');
     return null;

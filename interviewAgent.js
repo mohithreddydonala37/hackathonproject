@@ -161,12 +161,8 @@ function generateStructuredFeedback(session) {
     gaps.push(`Higher iteration count on complex tasks (${firstTry}/${completed} first-try passes).`);
   }
 
-  if (commitDays >= 25) {
-    strengths.push(`Strong engineering discipline and continuous daily commitment (${commitDays} active commit days).`);
-  }
-
   // Add conversation-based evaluations
-  strengths.push(`Demonstrated solid verbal articulation of system architecture and RAG trade-offs during the interview.`);
+  strengths.push(`Demonstrated solid verbal articulation of system architecture and engineering trade-offs during the interview.`);
   
   if (gaps.length === 0) {
     gaps.push(`Could further deepen hands-on exposure to Kubernetes production deployment and distributed tracing.`);
@@ -176,7 +172,7 @@ function generateStructuredFeedback(session) {
   next.push(`Implement streaming SSE and response caching for low-latency AI endpoints.`);
   next.push(`Conduct load testing and cost-optimization profiling on vector index retrievals.`);
 
-  const summary = `${name} demonstrated a strong functional understanding of AI engineering principles, RAG pipelines, and candidate lifecycle workflows. With a background as a ${role} and ${commitDays} active commit days in the cohort, ${name} exhibits strong potential for full-stack AI development.`;
+  const summary = `${name} demonstrated a strong functional understanding of AI engineering principles and technical architecture as a ${role}. ${name} exhibits strong potential for scalable full-stack AI development.`;
 
   return {
     summary,

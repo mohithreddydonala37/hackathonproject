@@ -187,6 +187,7 @@ async function processSessionTurn(state, candidateMessage) {
       feedback = generateFeedbackReport(state);
     }
 
+    feedback = normalizeFeedbackReport(feedback, state);
     state.finalFeedback = feedback;
 
     const closingReply = 'Interview completed. Thank you for your time and detailed answers.';
@@ -318,44 +319,237 @@ function generateTurnQuestion(state) {
 }
 
 /**
+ * Normalizes a text string into a clean, canonical key for deduplication.
+ * @param {string} text
+ * @returns {string}
+ */
+function normalizeTextKey(text) {
+  if (!text || typeof text !== 'string') return '';
+  return text
+    .toLowerCase()
+    .replace(/[^\w\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/**
+ * Normalizes, deduplicates, and evidence-grounds a feedback debrief report.
+ *
+ * @param {object} rawFeedback - Raw feedback object { summary, strengths, gaps, next }
+ * @param {object} state - Session state object containing evaluationRecords, candidateSnapshot, coveredCurriculumDays, etc.
+ * @returns {{ summary: string, strengths: string[], gaps: string[], next: string[] }}
+ */
+function normalizeFeedbackReport(rawFeedback, state) {
+  const candidate = (state && state.candidateSnapshot) || {};
+  const name = candidate.name || 'The candidate';
+  const role = candidate.jobRole || 'Engineer';
+  const records = (state && Array.isArray(state.evaluationRecords)) ? state.evaluationRecords : [];
+  const turnCount = records.length || (state && state.currentQuestionNumber ? state.currentQuestionNumber - 1 : 1);
+
+  // 1. Executive Summary: Factual, session-based, no commit days claims.
+  let summary = '';
+
+  const topicsSet = new Set();
+  records.forEach(r => { if (r.topic) topicsSet.add(r.topic); });
+  if (topicsSet.size === 0 && state && Array.isArray(state.interviewPlan)) {
+    state.interviewPlan.slice(0, 4).forEach(t => { if (t.title) topicsSet.add(t.title); });
+  }
+  const coveredTopicsArray = Array.from(topicsSet);
+
+  if (rawFeedback && typeof rawFeedback.summary === 'string' && rawFeedback.summary.trim()) {
+    summary = rawFeedback.summary
+      .replace(/and maintained \d+ active commit days in the cohort\.?/gi, '')
+      .replace(/with \d+ active commit days in the cohort\.?/gi, '')
+      .replace(/with \d+ active commit days\.?/gi, '')
+      .replace(/Completed \d+ cohort missions with \d+ active commit days\.?/gi, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  if (!summary || summary.length < 20) {
+    const topicListStr = coveredTopicsArray.length > 0
+      ? ` spanning ${coveredTopicsArray.join(', ')}`
+      : '';
+    summary = `${name} demonstrated strong capability across the assessed technical competencies as a ${role}. The interview covered ${turnCount} technical turns${topicListStr}.`;
+  }
+
+  // 2. Strengths Deduplication & One-Per-Competency Aggregation
+  const rawStrengths = (rawFeedback && Array.isArray(rawFeedback.strengths)) ? rawFeedback.strengths : [];
+
+  const topicRecordsMap = new Map();
+  records.forEach(r => {
+    if (!r.topic) return;
+    if (!topicRecordsMap.has(r.topic)) {
+      topicRecordsMap.set(r.topic, []);
+    }
+    topicRecordsMap.get(r.topic).push(r);
+  });
+
+  const finalStrengths = [];
+  const seenStrengthKeys = new Set();
+  const processedTopicsSet = new Set();
+
+  for (const [topic, topicRecords] of topicRecordsMap.entries()) {
+    const strongOrSolid = topicRecords.filter(r => r.rating === 'STRONG' || r.rating === 'SOLID');
+    if (strongOrSolid.length > 0) {
+      processedTopicsSet.add(topic);
+
+      let strengthText;
+      if (topicRecords.length > 1) {
+        const aspects = new Set();
+        topicRecords.forEach(r => {
+          const qt = r.questionType || '';
+          if (qt.includes('ARCH') || qt === 'ARCHITECTURE') aspects.add('architecture');
+          else if (qt.includes('DEEP') || qt === 'DEEP_DIVE') aspects.add('implementation details');
+          else if (qt.includes('APP') || qt === 'APPLICATION') aspects.add('edge cases');
+          else if (qt.includes('TRADEOFF')) aspects.add('trade-offs');
+          else if (qt.includes('CONCEPT')) aspects.add('core concepts');
+          else aspects.add('failure modes');
+        });
+
+        const aspectList = Array.from(aspects);
+        let aspectPhrase = '';
+        if (aspectList.length === 1) {
+          aspectPhrase = ` across ${aspectList[0]}`;
+        } else if (aspectList.length > 1) {
+          const last = aspectList.pop();
+          aspectPhrase = ` across ${aspectList.join(', ')}, and ${last}`;
+        }
+
+        strengthText = `Demonstrated strong technical depth in ${topic}${aspectPhrase}.`;
+      } else {
+        strengthText = `Demonstrated strong technical depth in ${topic}.`;
+      }
+
+      const key = normalizeTextKey(strengthText);
+      if (!seenStrengthKeys.has(key)) {
+        seenStrengthKeys.add(key);
+        finalStrengths.push(strengthText);
+      }
+    }
+  }
+
+  for (const s of rawStrengths) {
+    if (!s || typeof s !== 'string') continue;
+    const cleanStr = s.trim();
+    if (!cleanStr) continue;
+
+    let mentionsProcessedTopic = false;
+    for (const topic of processedTopicsSet) {
+      if (cleanStr.toLowerCase().includes(topic.toLowerCase())) {
+        mentionsProcessedTopic = true;
+        break;
+      }
+    }
+    if (mentionsProcessedTopic) continue;
+
+    if (/commit days|cohort missions/i.test(cleanStr)) continue;
+
+    const key = normalizeTextKey(cleanStr);
+    if (!seenStrengthKeys.has(key)) {
+      seenStrengthKeys.add(key);
+      finalStrengths.push(cleanStr);
+    }
+  }
+
+  if (finalStrengths.length === 0) {
+    finalStrengths.push(`Demonstrated solid verbal articulation of system architecture and engineering trade-offs.`);
+  }
+
+  const deduplicatedStrengths = finalStrengths.slice(0, 5);
+
+  // 3. Areas to Strengthen (Gaps) Deduplication
+  const rawGaps = (rawFeedback && Array.isArray(rawFeedback.gaps)) ? rawFeedback.gaps : [];
+  const finalGaps = [];
+  const seenGapKeys = new Set();
+  const processedGapTopicsSet = new Set();
+
+  for (const [topic, topicRecords] of topicRecordsMap.entries()) {
+    const weakRecords = topicRecords.filter(r => r.rating === 'WEAK');
+    if (weakRecords.length > 0) {
+      processedGapTopicsSet.add(topic);
+      const gapText = `Needs deeper understanding and practical reasoning in ${topic}.`;
+      const key = normalizeTextKey(gapText);
+      if (!seenGapKeys.has(key)) {
+        seenGapKeys.add(key);
+        finalGaps.push(gapText);
+      }
+    }
+  }
+
+  for (const g of rawGaps) {
+    if (!g || typeof g !== 'string') continue;
+    const cleanStr = g.trim();
+    if (!cleanStr) continue;
+
+    let mentionsProcessedTopic = false;
+    for (const topic of processedGapTopicsSet) {
+      if (cleanStr.toLowerCase().includes(topic.toLowerCase())) {
+        mentionsProcessedTopic = true;
+        break;
+      }
+    }
+    if (mentionsProcessedTopic) continue;
+
+    const key = normalizeTextKey(cleanStr);
+    if (!seenGapKeys.has(key)) {
+      seenGapKeys.add(key);
+      finalGaps.push(cleanStr);
+    }
+  }
+
+  const deduplicatedGaps = finalGaps.slice(0, 3);
+  if (deduplicatedGaps.length === 0 && rawGaps.length > 0) {
+    const cleanGeneric = rawGaps.map(g => String(g).trim()).find(g => g && !seenGapKeys.has(normalizeTextKey(g)));
+    if (cleanGeneric) {
+      deduplicatedGaps.push(cleanGeneric);
+    }
+  }
+  if (deduplicatedGaps.length === 0) {
+    deduplicatedGaps.push(`Could further deepen hands-on exposure to Kubernetes production deployment and distributed tracing.`);
+  }
+
+  // 4. Next Steps Deduplication
+  const rawNext = (rawFeedback && Array.isArray(rawFeedback.next)) ? rawFeedback.next : [];
+  const finalNext = [];
+  const seenNextKeys = new Set();
+
+  for (const n of rawNext) {
+    if (!n || typeof n !== 'string') continue;
+    const cleanStr = n.trim();
+    if (!cleanStr) continue;
+
+    const key = normalizeTextKey(cleanStr);
+    if (!seenNextKeys.has(key)) {
+      seenNextKeys.add(key);
+      finalNext.push(cleanStr);
+    }
+  }
+
+  if (finalNext.length === 0) {
+    finalNext.push(`Practice designing production-grade Model Context Protocol (MCP) servers with custom schema validation.`);
+    finalNext.push(`Implement streaming SSE and response caching for low-latency AI endpoints.`);
+    finalNext.push(`Conduct load testing and cost-optimization profiling on vector index retrievals.`);
+  }
+
+  const deduplicatedNext = finalNext.slice(0, 3);
+
+  return {
+    summary,
+    strengths: deduplicatedStrengths,
+    gaps: deduplicatedGaps,
+    next: deduplicatedNext
+  };
+}
+
+/**
  * Synthesize structured feedback report (deterministic evidence-based fallback).
  *
  * @param {object} state
  * @returns {{ summary: string, strengths: string[], gaps: string[], next: string[] }}
  */
 function generateFeedbackReport(state) {
-  const { name, jobRole, commitDays, missionsCompleted } = state.candidateSnapshot;
-  const records = Array.isArray(state.evaluationRecords) ? state.evaluationRecords : [];
-
-  const strongRecords = records.filter(r => r.rating === 'STRONG');
-  const weakRecords   = records.filter(r => r.rating === 'WEAK');
-
-  const summary = `${name} demonstrated functional capability in AI engineering principles as a ${jobRole}. ` +
-    `Across ${records.length} technical interview turns, ${name} completed ${strongRecords.length} high-precision evaluations ` +
-    `and maintained ${commitDays} active commit days in the cohort.`;
-
-  const strengths = strongRecords.length > 0
-    ? strongRecords.map(r => `Demonstrated strong technical depth in ${r.topic}.`)
-    : [
-        `Demonstrated solid verbal articulation of system architecture and engineering trade-offs.`,
-        `Completed ${missionsCompleted} cohort missions with ${commitDays} active commit days.`
-      ];
-
-  const gaps = weakRecords.length > 0
-    ? weakRecords.map(r => `Needs deeper understanding and practical reasoning in ${r.topic}.`)
-    : [
-        `Could further deepen hands-on exposure to Kubernetes production deployment and distributed tracing.`
-      ];
-
-  const next = weakRecords.length > 0
-    ? weakRecords.map(r => `Review core objectives for ${r.topic} and build a practical implementation reference.`)
-    : [
-        `Practice designing production-grade Model Context Protocol (MCP) servers with custom schema validation.`,
-        `Implement streaming SSE and response caching for low-latency AI endpoints.`,
-        `Conduct load testing and cost-optimization profiling on vector index retrievals.`
-      ];
-
-  return { summary, strengths, gaps, next };
+  return normalizeFeedbackReport(null, state);
 }
 
 module.exports = {
@@ -363,4 +557,5 @@ module.exports = {
   processSessionTurn,
   generateInitialGreeting,
   generateFeedbackReport,
+  normalizeFeedbackReport,
 };
