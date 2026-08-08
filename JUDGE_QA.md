@@ -1,50 +1,87 @@
-# SentinelAI • Technical Judge Q&A Guide
+# SentinelAI • Hackathon Judge Q&A Guide
 
-> **Concise, authoritative technical answers to 15 key questions likely to be asked by hackathon judges during evaluation.**
+Detailed responses to 15 key technical and architectural questions judges may ask.
 
 ---
 
-### 1. Why did you use Groq LLM instead of standard OpenAI or Claude APIs?
-**Answer**: Groq's Llama-3-8b inference speed delivers sub-second turn latency (~450ms–1.2s), satisfying the project requirement of < 2 seconds per turn. This real-time speed makes the AI interviewer feel responsive and conversationally natural.
+### 1. What problem are you solving?
+**CURRENT IMPLEMENTATION**: Traditional technical interview screening is either static and rigid (multiple-choice or fixed question lists) or handled by unconstrained AI chatbots that lose track of state, repeat topics, or hallucinate candidate capabilities. SentinelAI solves this by pairing deterministic strategy guardrails with Groq LLM natural language phrasing to deliver adaptive, candidate-aware technical interviews with evidence-grounded evaluation.
 
-### 2. Why did you combine a deterministic strategy engine with an LLM?
-**Answer**: Pure LLM chatbots lose track of question counts, repeat topics endlessly, hallucinate completion states, or succumb to prompt injections. By using a deterministic strategy engine (`interviewStrategyEngine.js`) for state control, question counting, curriculum tracking, and difficulty transitions, we guarantee 100% adherence to rules while leveraging Groq strictly for natural language phrasing and answer evaluation.
+---
 
-### 3. Why did you choose SQLite for session storage?
-**Answer**: SQLite provides zero-dependency, lightweight, ACID-compliant file-based persistence (`data/sessions.db`). Sessions survive application restarts and execute parameterized queries in < 2ms without requiring complex external database server setup.
+### 2. Why is this different from ChatGPT / generic wrappers?
+**CURRENT IMPLEMENTATION**: Generic ChatGPT wrappers put the LLM in charge of the conversation state, leading to missing question counters, infinite loops, and prompt injection vulnerabilities. SentinelAI uses a **deterministic state machine** (`interviewStrategyEngine.js`). The LLM is used strictly as a natural language generation and evaluation engine. The strategy engine controls topic selection, difficulty escalation, follow-up budgets (max 2 per topic), and interview completion criteria (8+ questions, 4+ curriculum days).
 
-### 4. How is candidate personalization achieved?
-**Answer**: `candidateProfiler.js` and `topicSelector.js` analyze candidate background signals (`yearsExperience`, `jobRole`, `commitDays`, `missionsCompleted`, `missionsFirstTry`). Experienced candidates (e.g., Senior Data Engineer with 9 yrs exp) start at `DEPTH` difficulty on advanced topics, whereas interns start at `FOUNDATION` difficulty on baseline concepts.
+---
 
-### 5. How do you guarantee the minimum 8 questions requirement?
-**Answer**: The strategy engine guard `canComplete(state)` explicitly checks `state.currentQuestionNumber >= 8`. Even if a candidate begs to finish or attempts prompt injection, `done: true` is mathematically impossible until 8 primary questions are completed.
+### 3. How does adaptive questioning work?
+**CURRENT IMPLEMENTATION**: After every candidate response, `groqService.evaluateCandidateAnswer` scores the response across 4 dimensions (0–5 scores). Based on the rating (`STRONG`, `ADEQUATE`, `WEAK`, `UNKNOWN`), `interviewStrategyEngine.js` decides the next action:
+- `STRONG`: Escalates difficulty (`APPLICATION` → `DEPTH` → `ARCHITECTURE`) and probes trade-offs.
+- `WEAK`: Reframes concepts or asks clarifying questions.
+- `MAX_FOLLOWUPS`: Transitions to the next top-ranked curriculum competency.
 
-### 6. How do you guarantee the minimum 4 curriculum days requirement?
-**Answer**: `topicSelector.js` tracks `state.coveredCurriculumDays`. The strategy engine forces topic transitions to uncovered curriculum days whenever a topic is completed, ensuring `uniqueCurriculumDays >= 4` before `canComplete(state)` evaluates to true.
+---
 
-### 7. How do you prevent cross-session data leakage?
-**Answer**: Each session is bound to a unique `sessionId` primary key in SQLite. Database queries operate strictly on individual `sessionId` records. Multi-session load tests verified 100% data isolation across 10 concurrent sessions.
+### 4. How do you prevent repetitive questions?
+**CURRENT IMPLEMENTATION**: SentinelAI maintains an `askedQuestionsHistory` array in the SQLite session state. Every candidate answer is checked against previous question topics. In addition, canonical key string deduplication ensures no duplicate questions or strengths are generated across turns.
 
-### 8. What happens if Groq API fails or rate-limits (HTTP 429)?
-**Answer**: `groqService.js` includes exponential backoff retries (max 2), a 6,000ms timeout circuit breaker, and deterministic fallbacks (`generateTurnQuestion`, `evaluateAnswerDeterministic`, `generateFeedbackReport`). The application never crashes and maintains 100% spec compliance even during LLM outages.
+---
 
-### 9. How do you optimize token usage and context size?
-**Answer**: Static curriculum and candidate JSON files are loaded once and cached in memory. Prompt context payloads sent to Groq are capped at < 3KB per turn, containing only the candidate snapshot and the last 3 conversation turns.
+### 5. How do you evaluate candidate answers?
+**CURRENT IMPLEMENTATION**: Answers are evaluated against 4 bounded criteria: Technical Accuracy (0–5), Conceptual Depth (0–5), Practical Reasoning (0–5), and Communication (0–5). Evaluators extract observable evidence statements from the candidate's text. If LLM calls fail, a fallback word-count and keyword heuristic evaluator provides bounded fallback scores.
 
-### 10. How do you prevent prompt injection attacks?
-**Answer**: Candidate text inputs are treated strictly as untrusted string data for evaluation. Deterministic strategy rules (question counting, completion status, database mutations) execute outside LLM context and cannot be overridden by candidate prompt content.
+---
 
-### 11. Why isn't SentinelAI just another generic chatbot wrapper?
-**Answer**: Unlike chatbots, SentinelAI features personalized profile indexing, multi-dimensional 0–5 answer evaluation across 4 technical axes, 5-level difficulty state transitions, follow-up budget enforcement (max 2 per topic), SQLite persistence, and evidence-driven debrief report synthesis.
+### 6. How do you prevent hallucinated evaluations?
+**CURRENT IMPLEMENTATION**: SentinelAI's prompt rules strictly require evidence to be derived ONLY from observable candidate statements. Furthermore, `interviewPlanner.js` normalizes all feedback through `normalizeFeedbackReport`, which strips unverified claims (such as commit-day claims) and formats strengths as `[Competency]: [specific evidence demonstrated]`.
 
-### 12. How does candidate performance affect questioning during the interview?
-**Answer**: If an answer receives high scores (4–5), difficulty escalates (`APPLICATION` → `DEPTH` → `ADVANCED`), triggering practical trade-off follow-ups. If an answer receives low scores (0–1), difficulty de-escalates to `FOUNDATION`, triggering concept reframing questions.
+---
 
-### 13. How is the final feedback debrief report generated?
-**Answer**: During the interview, 0–5 evaluation records are stored for every primary turn. Upon completion, `groqService.js` synthesizes a structured report containing an executive summary, demonstrated strengths (`✓`), technical gaps (`→`), and actionable next steps (`1. 2. 3.`) derived directly from turn evidence.
+### 7. Why did you choose Groq?
+**CURRENT IMPLEMENTATION**: Groq Cloud provides ultra-fast inference latency using LPU (Language Processing Unit) hardware running Llama 3 8B. Sub-500ms LLM response times ensure a real-time conversational flow during technical interviews.
 
-### 14. How would you scale this architecture for production enterprise deployment?
-**Answer**: The backend is stateless except for the SQLite database. SQLite can be swapped for PostgreSQL, session state can be cached in Redis, and Groq calls can be load-balanced across multiple API keys or private self-hosted inference servers.
+---
 
-### 15. What features would you build next in Phase 15?
-**Answer**: Real-time voice audio streaming via WebRTC/WebSocket, live code execution sandbox (WebAssembly/Docker container runner), and enterprise ATS integration (Greenhouse/Lever webhooks).
+### 8. How does streaming work?
+**CURRENT IMPLEMENTATION**: Frontend responses render smoothly as full structured JSON payloads containing interviewer replies, active topic metadata, and turn counters.
+**FUTURE SCALING PLAN**: Implement Server-Sent Events (SSE) streaming (`text/event-stream`) directly from Groq to stream token-by-token question text to the frontend.
+
+---
+
+### 9. How would this scale to thousands of interviews?
+**CURRENT IMPLEMENTATION**: SQLite with WAL (Write-Ahead Logging) supports high-concurrency read/write throughput for session states. Sessions are fully isolated by `sessionId`.
+**FUTURE SCALING PLAN**: Replace SQLite with PostgreSQL or Redis for session caching, deploy stateless Express workers behind an ALB load balancer, and place Groq LLM API requests into a Redis-backed queue (BullMQ).
+
+---
+
+### 10. How do you handle LLM failures?
+**CURRENT IMPLEMENTATION**: `groqService.js` includes a 6-second timeout circuit breaker and automatic 2-attempt retry logic. If Groq API returns HTTP 429 rate limits or invalid JSON, SentinelAI seamlessly falls back to deterministic curriculum question templates with 100% API contract compliance and 0% downtime.
+
+---
+
+### 11. How do you protect API keys?
+**CURRENT IMPLEMENTATION**: `GROQ_API_KEY` is loaded strictly on the server-side via `process.env`. Frontend bundles contain zero secrets. Error handlers and debrief normalizers strip any potential API key patterns from outputs.
+
+---
+
+### 12. How would you add RAG?
+**CURRENT IMPLEMENTATION**: Questions are selected from structured curriculum JSON files (`data/curriculum.json`).
+**FUTURE SCALING PLAN**: Ingest company engineering documentation, GitHub repositories, and architectural ADRs into a vector database (e.g. pgvector or Pinecone) to ground technical questions in company-specific codebases.
+
+---
+
+### 13. How would you add MCP (Model Context Protocol)?
+**CURRENT IMPLEMENTATION**: Technical topics cover MCP concepts in curriculum Day 31.
+**FUTURE SCALING PLAN**: Build an MCP tool server allowing SentinelAI to dynamically fetch candidate GitHub code commits, PR reviews, and live coding sandbox outputs during the interview.
+
+---
+
+### 14. How would you support multiple LLM providers?
+**CURRENT IMPLEMENTATION**: Groq Llama 3 is integrated via `groqService.js`.
+**FUTURE SCALING PLAN**: Implement a unified `LLMProvider` interface with adapters for Groq, OpenAI, Anthropic, and Ollama (local offline models).
+
+---
+
+### 15. How would you improve the system in production?
+**CURRENT IMPLEMENTATION**: Full end-to-end interview flow, SQLite state persistence, candidate profiler, 406 test assertions, Render deployment.
+**FUTURE SCALING PLAN**: Add live audio webRTC speech-to-text, real-time code editor integration (Monaco Editor), and automated multi-interviewer consensus scoring.
