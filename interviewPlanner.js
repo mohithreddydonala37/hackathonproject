@@ -416,9 +416,9 @@ function normalizeFeedbackReport(rawFeedback, state) {
           aspectPhrase = ` across ${aspectList.join(', ')}, and ${last}`;
         }
 
-        strengthText = `Demonstrated strong technical depth in ${topic}${aspectPhrase}.`;
+        strengthText = `${topic}: Demonstrated strong technical depth${aspectPhrase}.`;
       } else {
-        strengthText = `Demonstrated strong technical depth in ${topic}.`;
+        strengthText = `${topic}: Demonstrated strong technical depth and clear architectural reasoning.`;
       }
 
       const key = normalizeTextKey(strengthText);
@@ -453,7 +453,7 @@ function normalizeFeedbackReport(rawFeedback, state) {
   }
 
   if (finalStrengths.length === 0) {
-    finalStrengths.push(`Demonstrated solid verbal articulation of system architecture and engineering trade-offs.`);
+    finalStrengths.push(`System Architecture: Demonstrated solid verbal articulation of system architecture and engineering trade-offs.`);
   }
 
   const deduplicatedStrengths = finalStrengths.slice(0, 5);
@@ -468,7 +468,7 @@ function normalizeFeedbackReport(rawFeedback, state) {
     const weakRecords = topicRecords.filter(r => r.rating === 'WEAK');
     if (weakRecords.length > 0) {
       processedGapTopicsSet.add(topic);
-      const gapText = `Needs deeper understanding and practical reasoning in ${topic}.`;
+      const gapText = `${topic}: Could deepen hands-on implementation experience and practical edge-case reasoning.`;
       const key = normalizeTextKey(gapText);
       if (!seenGapKeys.has(key)) {
         seenGapKeys.add(key);
@@ -506,7 +506,7 @@ function normalizeFeedbackReport(rawFeedback, state) {
     }
   }
   if (deduplicatedGaps.length === 0) {
-    deduplicatedGaps.push(`Could further deepen hands-on exposure to Kubernetes production deployment and distributed tracing.`);
+    deduplicatedGaps.push(`Production Operations: Could deepen hands-on experience with Kubernetes deployment, distributed tracing, and diagnosing latency or failure propagation across distributed services.`);
   }
 
   // 4. Next Steps Deduplication
