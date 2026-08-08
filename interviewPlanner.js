@@ -358,6 +358,8 @@ function normalizeFeedbackReport(rawFeedback, state) {
 
   if (rawFeedback && typeof rawFeedback.summary === 'string' && rawFeedback.summary.trim()) {
     summary = rawFeedback.summary
+      .replace(/gsk_[a-zA-Z0-9_-]+/gi, '[REDACTED_KEY]')
+      .replace(/GROQ_API_KEY\s*=\s*[^\s,.]+/gi, '[REDACTED_KEY]')
       .replace(/and maintained \d+ active commit days in the cohort\.?/gi, '')
       .replace(/with \d+ active commit days in the cohort\.?/gi, '')
       .replace(/with \d+ active commit days\.?/gi, '')
