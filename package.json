@@ -1,0 +1,18 @@
+{
+  "name": "ai-interview-agent",
+  "version": "1.0.0",
+  "description": "AI Interview Agent API service matching technical specification",
+  "main": "server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node testRunner.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^17.4.2",
+    "express": "^4.19.2",
+    "groq-sdk": "^1.5.0",
+    "sqlite3": "^6.0.1"
+  }
+}

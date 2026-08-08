@@ -1,0 +1,1476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SentinelAI • Senior AI Technical Interviewer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #090d16;
+      --bg-surface: rgba(15, 23, 42, 0.8);
+      --bg-card: rgba(18, 26, 44, 0.7);
+      --bg-card-hover: rgba(30, 41, 69, 0.85);
+      --border-color: rgba(255, 255, 255, 0.08);
+      --border-highlight: rgba(99, 102, 241, 0.35);
+      --accent-primary: #6366f1;
+      --accent-cyan: #06b6d4;
+      --accent-green: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-purple: #8b5cf6;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-sub: #cbd5e1;
+      --font-main: 'Plus Jakarta Sans', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 20px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background-color: var(--bg-dark);
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.12) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(6, 182, 212, 0.12) 0px, transparent 50%),
+        radial-gradient(at 50% 50%, rgba(15, 23, 42, 0.6) 0px, transparent 100%);
+      color: var(--text-main);
+      font-family: var(--font-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    /* Accessibility reduced motion */
+    @media (prefers-reduced-motion: reduce) {
+      *, ::before, ::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+      }
+    }
+
+    /* Focus visible for accessibility */
+    :focus-visible {
+      outline: 2px solid var(--accent-cyan);
+      outline-offset: 3px;
+    }
+
+    /* Header Navigation */
+    header {
+      padding: 1rem 2rem;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+      cursor: pointer;
+      text-decoration: none;
+    }
+
+    .brand-logo {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--accent-primary), var(--accent-cyan));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 1.35rem;
+      color: #fff;
+      box-shadow: 0 0 25px rgba(99, 102, 241, 0.4);
+    }
+
+    .brand-text h1 {
+      font-size: 1.15rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      background: linear-gradient(to right, #ffffff, #94a3b8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .brand-text p {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .candidate-pill {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      background: rgba(30, 41, 59, 0.6);
+      border: 1px solid var(--border-color);
+      padding: 0.4rem 0.9rem;
+      border-radius: 30px;
+      font-size: 0.8rem;
+    }
+
+    .candidate-avatar {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent-primary), var(--accent-purple));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      font-weight: 700;
+    }
+
+    .progress-bar-container {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      background: rgba(30, 41, 59, 0.6);
+      border: 1px solid var(--border-color);
+      padding: 0.4rem 0.9rem;
+      border-radius: 30px;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: #a5b4fc;
+    }
+
+    .progress-track {
+      width: 80px;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 10%;
+      background: linear-gradient(to right, var(--accent-primary), var(--accent-cyan));
+      border-radius: 3px;
+      transition: width 0.4s ease;
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 0.5rem 1rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    /* Main Container Views */
+    main {
+      flex: 1;
+      max-width: 1440px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 2rem 1.5rem;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .view-screen {
+      display: none;
+      animation: fadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    .view-screen.active {
+      display: flex;
+      flex-direction: column;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* State A: Landing Screen */
+    .landing-hero {
+      text-align: center;
+      margin: 3rem auto;
+      max-width: 800px;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.4rem 1rem;
+      border-radius: 30px;
+      background: rgba(99, 102, 241, 0.1);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      color: #a5b4fc;
+      font-size: 0.8rem;
+      font-weight: 600;
+      margin-bottom: 1.5rem;
+      font-family: var(--font-mono);
+    }
+
+    .landing-hero h2 {
+      font-size: 2.75rem;
+      font-weight: 800;
+      line-height: 1.2;
+      letter-spacing: -0.03em;
+      margin-bottom: 1.25rem;
+      background: linear-gradient(to bottom, #ffffff, #94a3b8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .landing-hero p {
+      font-size: 1.1rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+      margin-bottom: 2.5rem;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent-primary), #4f46e5);
+      border: none;
+      color: #fff;
+      padding: 0.9rem 2.2rem;
+      border-radius: var(--radius-md);
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 0 0 30px rgba(99, 102, 241, 0.35);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 40px rgba(99, 102, 241, 0.5);
+    }
+
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem;
+      margin-top: 4rem;
+    }
+
+    .feature-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 1.75rem;
+      transition: border-color 0.2s ease;
+    }
+
+    .feature-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      background: rgba(99, 102, 241, 0.12);
+      color: var(--accent-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .feature-card h3 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+
+    .feature-card p {
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      line-height: 1.55;
+    }
+
+    /* State B: Candidate Selection */
+    .selection-header {
+      margin-bottom: 2rem;
+    }
+
+    .selection-header h2 {
+      font-size: 1.8rem;
+      font-weight: 800;
+      margin-bottom: 0.5rem;
+    }
+
+    .selection-header p {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+
+    .candidates-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .candidate-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 1.5rem;
+      cursor: pointer;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .candidate-card:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-highlight);
+      transform: translateY(-3px);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    }
+
+    .cand-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+    }
+
+    .cand-info h3 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      margin-bottom: 0.25rem;
+    }
+
+    .cand-role {
+      font-size: 0.85rem;
+      color: var(--accent-cyan);
+      font-weight: 600;
+    }
+
+    .cand-exp {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      padding: 0.25rem 0.6rem;
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--border-color);
+      color: var(--text-sub);
+    }
+
+    /* State C: Initialization */
+    .init-container {
+      margin: 5rem auto;
+      text-align: center;
+      max-width: 500px;
+    }
+
+    .loader-orb {
+      width: 90px;
+      height: 90px;
+      margin: 0 auto 2rem;
+      border-radius: 50%;
+      background: radial-gradient(circle, var(--accent-cyan) 0%, var(--accent-primary) 70%);
+      animation: pulseBreath 2s infinite ease-in-out;
+      box-shadow: 0 0 50px rgba(6, 182, 212, 0.5);
+    }
+
+    @keyframes pulseBreath {
+      0%, 100% { transform: scale(0.92); opacity: 0.7; }
+      50% { transform: scale(1.08); opacity: 1; }
+    }
+
+    /* State D: 3-Zone Desktop Active Interview Room */
+    .interview-workspace {
+      display: grid;
+      grid-template-columns: 280px 1fr 340px;
+      gap: 1.5rem;
+      align-items: start;
+    }
+
+    @media (max-width: 1200px) {
+      .interview-workspace {
+        grid-template-columns: 260px 1fr;
+      }
+      .right-history-zone {
+        grid-column: span 2;
+      }
+    }
+
+    @media (max-width: 840px) {
+      .interview-workspace {
+        grid-template-columns: 1fr;
+      }
+      .right-history-zone {
+        grid-column: span 1;
+      }
+    }
+
+    /* Left Sidebar: Interview Map & Profile */
+    .left-map-zone {
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    .panel-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 1.25rem;
+    }
+
+    .panel-card h4 {
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .interview-map-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+    }
+
+    .map-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.82rem;
+      padding: 0.5rem 0.75rem;
+      border-radius: var(--radius-sm);
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid transparent;
+    }
+
+    .map-item.status-active {
+      background: rgba(99, 102, 241, 0.12);
+      border-color: var(--border-highlight);
+      color: #fff;
+      font-weight: 600;
+    }
+
+    .map-item.status-completed {
+      color: var(--text-muted);
+    }
+
+    .map-item-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 0.5rem;
+    }
+
+    .map-item.status-active .map-item-dot { background-color: var(--accent-cyan); box-shadow: 0 0 8px var(--accent-cyan); }
+    .map-item.status-completed .map-item-dot { background-color: var(--accent-green); }
+    .map-item.status-upcoming .map-item-dot { background-color: rgba(255, 255, 255, 0.2); }
+
+    .map-badge {
+      font-family: var(--font-mono);
+      font-size: 0.68rem;
+      padding: 0.15rem 0.45rem;
+      border-radius: 10px;
+    }
+
+    .map-item.status-active .map-badge { background: rgba(6, 182, 212, 0.2); color: var(--accent-cyan); }
+    .map-item.status-completed .map-badge { background: rgba(16, 185, 129, 0.2); color: var(--accent-green); }
+    .map-item.status-upcoming .map-badge { background: rgba(255, 255, 255, 0.05); color: var(--text-muted); }
+
+    /* Center Main Stage: Avatar + Question + Composer */
+    .center-stage-zone {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    /* Neural Avatar Presentation Box */
+    .interviewer-identity-box {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+    }
+
+    .neural-avatar-rings {
+      width: 70px;
+      height: 70px;
+      border-radius: 50%;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(circle, rgba(99, 102, 241, 0.8) 0%, rgba(6, 182, 212, 0.3) 70%, transparent 100%);
+      box-shadow: 0 0 30px rgba(99, 102, 241, 0.4);
+      flex-shrink: 0;
+    }
+
+    .neural-avatar-rings::before {
+      content: '';
+      position: absolute;
+      inset: -5px;
+      border-radius: 50%;
+      border: 2px dashed rgba(6, 182, 212, 0.5);
+      animation: spinRing 12s linear infinite;
+    }
+
+    @keyframes spinRing {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    .neural-avatar-rings.state-asking::before { border-color: var(--accent-cyan); animation-duration: 6s; }
+    .neural-avatar-rings.state-thinking::before { border-color: var(--accent-amber); animation-duration: 3s; }
+    .neural-avatar-rings.state-listening::before { border-color: var(--accent-green); animation-duration: 8s; }
+    .neural-avatar-rings.state-followup::before { border-color: var(--accent-purple); animation-duration: 4s; }
+
+    .identity-details {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .identity-title {
+      font-size: 1rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .state-pill {
+      font-family: var(--font-mono);
+      font-size: 0.68rem;
+      font-weight: 700;
+      padding: 0.2rem 0.6rem;
+      border-radius: 12px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .state-pill.asking { background: rgba(6, 182, 212, 0.15); color: var(--accent-cyan); border: 1px solid rgba(6, 182, 212, 0.3); }
+    .state-pill.speaking { background: rgba(6, 182, 212, 0.25); color: var(--accent-cyan); border: 1px solid rgba(6, 182, 212, 0.5); box-shadow: 0 0 10px rgba(6, 182, 212, 0.3); }
+    .state-pill.thinking { background: rgba(245, 158, 11, 0.15); color: var(--accent-amber); border: 1px solid rgba(245, 158, 11, 0.3); }
+    .state-pill.listening { background: rgba(16, 185, 129, 0.15); color: var(--accent-green); border: 1px solid rgba(16, 185, 129, 0.3); }
+    .state-pill.followup { background: rgba(139, 92, 246, 0.15); color: var(--accent-purple); border: 1px solid rgba(139, 92, 246, 0.3); }
+
+    .neural-avatar-rings.state-asking::before { border-color: var(--accent-cyan); animation-duration: 6s; }
+    .neural-avatar-rings.state-speaking::before { border-color: var(--accent-cyan); animation-duration: 1.5s; box-shadow: 0 0 20px var(--accent-cyan); }
+    .neural-avatar-rings.state-thinking::before { border-color: var(--accent-amber); animation-duration: 3s; }
+    .neural-avatar-rings.state-listening::before { border-color: var(--accent-green); animation-duration: 8s; }
+    .neural-avatar-rings.state-followup::before { border-color: var(--accent-purple); animation-duration: 4s; }
+
+    .btn-voice {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-color);
+      color: var(--text-sub);
+      font-size: 0.78rem;
+      font-weight: 600;
+      padding: 0.35rem 0.75rem;
+      border-radius: 20px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: all 0.2s ease;
+    }
+
+    .btn-voice:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--text-main);
+    }
+
+    .btn-voice.muted {
+      background: rgba(220, 38, 38, 0.15);
+      border-color: rgba(220, 38, 38, 0.3);
+      color: #fca5a5;
+    }
+
+    .transition-hint-banner {
+      font-size: 0.82rem;
+      color: var(--text-sub);
+      font-style: italic;
+      display: none;
+      animation: fadeIn 0.3s ease;
+    }
+
+    /* Question Display Box */
+    .question-box {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 1.75rem;
+    }
+
+    .topic-label {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--accent-cyan);
+      margin-bottom: 0.85rem;
+      display: inline-block;
+    }
+
+    .question-text {
+      font-size: 1.2rem;
+      font-weight: 600;
+      line-height: 1.6;
+      color: var(--text-main);
+    }
+
+    /* Answer Composer Editor */
+    .composer-box {
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+    }
+
+    .response-textarea {
+      width: 100%;
+      min-height: 140px;
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 1.15rem;
+      color: var(--text-main);
+      font-family: var(--font-main);
+      font-size: 0.95rem;
+      line-height: 1.6;
+      resize: vertical;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .response-textarea:focus {
+      outline: none;
+      border-color: var(--accent-primary);
+      box-shadow: 0 0 20px rgba(99, 102, 241, 0.25);
+    }
+
+    .composer-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .char-guidance {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    /* Right Sidebar: Conversation History Drawer */
+    .right-history-zone {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .history-accordion-toggle {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 1rem 1.25rem;
+      color: var(--text-main);
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+    }
+
+    .history-turns-container {
+      display: none;
+      flex-direction: column;
+      gap: 0.85rem;
+      max-height: 500px;
+      overflow-y: auto;
+      padding-right: 0.35rem;
+    }
+
+    .history-turns-container.open {
+      display: flex;
+    }
+
+    .turn-card {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 0.9rem;
+      font-size: 0.82rem;
+    }
+
+    .turn-card .q-title {
+      color: var(--accent-cyan);
+      font-weight: 600;
+      margin-bottom: 0.35rem;
+    }
+
+    .turn-card .a-text {
+      color: var(--text-sub);
+      line-height: 1.5;
+    }
+
+    /* State F: Completion & Feedback */
+    .completion-container {
+      display: flex;
+      flex-direction: column;
+      gap: 1.75rem;
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    .completion-header {
+      text-align: center;
+      padding: 2rem;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+    }
+
+    .completion-header h2 {
+      font-size: 1.8rem;
+      font-weight: 800;
+      margin-bottom: 0.4rem;
+    }
+
+    .feedback-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .feedback-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 1.5rem;
+    }
+
+    .feedback-card h3 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin-bottom: 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .feedback-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+    }
+
+    .feedback-list li {
+      font-size: 0.88rem;
+      color: var(--text-sub);
+      line-height: 1.55;
+      display: flex;
+      align-items: flex-start;
+      gap: 0.5rem;
+    }
+
+    .icon-check { color: var(--accent-green); font-weight: 800; }
+    .icon-gap   { color: var(--accent-amber); font-weight: 800; }
+    .icon-next  { color: var(--accent-cyan); font-family: var(--font-mono); font-weight: 700; }
+
+    /* Toast Notification */
+    .toast-error {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      background: rgba(220, 38, 38, 0.9);
+      color: #fff;
+      padding: 0.9rem 1.4rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.88rem;
+      font-weight: 600;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+      display: none;
+      align-items: center;
+      gap: 0.75rem;
+      z-index: 1000;
+    }
+
+    .toast-error.active { display: flex; }
+  </style>
+</head>
+<body>
+
+  <!-- Top Header Navigation -->
+  <header>
+    <a href="#" class="brand" onclick="resetToLanding(event)">
+      <div class="brand-logo">S</div>
+      <div class="brand-text">
+        <h1>SentinelAI</h1>
+        <p>AI Technical Interviewer</p>
+      </div>
+    </a>
+
+    <div class="header-right">
+      <div id="header-cand-pill" class="candidate-pill" style="display: none;">
+        <div id="header-cand-avatar" class="candidate-avatar">SJ</div>
+        <span id="header-cand-name" style="font-weight: 600;">Sarah Johnson</span>
+      </div>
+
+      <div id="header-progress-pill" class="progress-bar-container" style="display: none;">
+        <span id="header-progress-text">Question 01 / 10+</span>
+        <div class="progress-track">
+          <div id="progress-fill" class="progress-fill"></div>
+        </div>
+      </div>
+
+      <button id="btn-header-action" class="btn-secondary" onclick="resetToLanding(event)">New Session</button>
+    </div>
+  </header>
+
+  <!-- Main Workspace -->
+  <main>
+
+    <!-- State A: Landing Screen -->
+    <section id="view-landing" class="view-screen active">
+      <div class="landing-hero">
+        <div class="hero-badge">● DETERMINISTIC & ADAPTIVE</div>
+        <h2>Live adaptive technical interviews tailored to your experience.</h2>
+        <p>SentinelAI evaluates technical accuracy, depth, practical reasoning, and system architecture using personalized candidate intelligence and curriculum indexing.</p>
+        <button class="btn-primary" onclick="showView('view-selection')">
+          Start Technical Interview →
+        </button>
+      </div>
+
+      <div class="feature-grid">
+        <div class="feature-card">
+          <div class="feature-icon">🧠</div>
+          <h3>Candidate Intelligence</h3>
+          <p>Personalizes initial difficulty and topic queues directly from candidate background signals and experience.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🎯</div>
+          <h3>Adaptive Strategy Engine</h3>
+          <p>Dynamically adjusts question difficulty, probes trade-offs, or reframes concepts based on answer evaluations.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">📊</div>
+          <h3>Evidence-Based Debrief</h3>
+          <p>Synthesizes structured feedback report containing demonstrated strengths, technical gaps, and actionable next steps.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- State B: Candidate Selection Screen -->
+    <section id="view-selection" class="view-screen">
+      <div class="selection-header">
+        <h2>Select Candidate Profile</h2>
+        <p>Choose a candidate profile to launch their personalized technical interview.</p>
+      </div>
+
+      <div id="candidates-grid" class="candidates-grid">
+        <!-- Candidate cards rendered dynamically without raw performance stats -->
+      </div>
+    </section>
+
+    <!-- State C: Initialization Screen -->
+    <section id="view-init" class="view-screen">
+      <div class="init-container">
+        <div class="loader-orb"></div>
+        <h3 id="init-title">Initializing Virtual Interview Room...</h3>
+        <p id="init-subtitle">Building personalized curriculum context & initializing session state...</p>
+      </div>
+    </section>
+
+    <!-- State D: Active 3-Zone Desktop Workspace -->
+    <section id="view-interview" class="view-screen">
+      <div class="interview-workspace">
+        
+        <!-- Left Zone: Interview Map & Profile -->
+        <aside class="left-map-zone">
+          <div class="panel-card">
+            <h4>Candidate Profile</h4>
+            <div id="panel-cand-name" style="font-weight: 700; font-size: 1rem; margin-bottom: 0.25rem;">Sarah Johnson</div>
+            <div id="panel-cand-role" style="color: var(--accent-cyan); font-size: 0.82rem; margin-bottom: 0.5rem;">Senior Data Engineer</div>
+            <div id="panel-cand-edu" style="color: var(--text-muted); font-size: 0.78rem;">MS Computer Science</div>
+          </div>
+
+          <div class="panel-card">
+            <h4>Interview Map</h4>
+            <ul id="interview-map-list" class="interview-map-list">
+              <!-- Rendered dynamically -->
+            </ul>
+          </div>
+        </aside>
+
+        <!-- Center Zone: Neural Avatar + Question + Composer -->
+        <div class="center-stage-zone">
+          
+          <!-- Neural Avatar Visual Identity -->
+          <div class="interviewer-identity-box">
+            <div id="neural-avatar-rings" class="neural-avatar-rings state-asking">
+              <span style="font-size: 1.5rem;">🤖</span>
+            </div>
+            <div class="identity-details" style="flex: 1;">
+              <div class="identity-title">
+                Senior AI Interviewer
+                <span id="state-pill" class="state-pill asking">ASKING</span>
+              </div>
+              <div id="transition-hint-banner" class="transition-hint-banner">
+                "Let me probe deeper into that design choice..."
+              </div>
+            </div>
+            <div>
+              <button id="btn-voice-toggle" class="btn-voice" onclick="toggleVoiceMute()" aria-label="Toggle voice output">🔊 Voice On</button>
+            </div>
+          </div>
+
+          <!-- Question Display Box -->
+          <div class="question-box">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.85rem;">
+              <div id="topic-label" class="topic-label" style="margin-bottom: 0;">Embeddings & Vector Search</div>
+              <button id="btn-voice-replay" class="btn-voice" style="font-size: 0.72rem;" onclick="replayQuestion()" aria-label="Replay current question voice">🔊 Replay Question</button>
+            </div>
+            <div id="question-text" class="question-text">
+              Loading interviewer question...
+            </div>
+          </div>
+
+          <!-- Response Answer Composer -->
+          <div class="composer-box">
+            <textarea 
+              id="response-textarea" 
+              class="response-textarea" 
+              aria-label="Technical response input"
+              placeholder="Type your technical response here..."
+              oninput="handleTextareaInput(event)"
+              onkeydown="handleTextareaKeydown(event)"
+            ></textarea>
+            
+            <div class="composer-footer">
+              <span id="char-guidance" class="char-guidance">0 / 10,000 characters (Press Ctrl + Enter to submit)</span>
+              <button id="btn-submit-answer" class="btn-primary" onclick="submitAnswer()">
+                Submit Response →
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Right Zone: Conversation History Accordion -->
+        <aside class="right-history-zone">
+          <button class="history-accordion-toggle" onclick="toggleHistoryAccordion()">
+            <span id="history-toggle-title">CONVERSATION HISTORY (0)</span>
+            <span id="history-toggle-icon">▼</span>
+          </button>
+          <div id="history-turns-container" class="history-turns-container">
+            <!-- Rendered dynamically -->
+          </div>
+        </aside>
+
+      </div>
+    </section>
+
+    <!-- State F: Completion & Debrief Screen -->
+    <section id="view-completion" class="view-screen">
+      <div class="completion-container">
+        <div class="completion-header">
+          <h2>Interview Assessment Debrief</h2>
+          <p>Comprehensive evaluation report synthesized from demonstrated interview evidence.</p>
+        </div>
+
+        <div class="feedback-card">
+          <h3>Executive Summary</h3>
+          <p id="debrief-summary" style="font-size: 0.95rem; color: var(--text-sub); line-height: 1.6;">
+            Summary text...
+          </p>
+        </div>
+
+        <div class="feedback-grid">
+          <div class="feedback-card">
+            <h3><span style="color: var(--accent-green);">✓</span> Demonstrated Strengths</h3>
+            <ul id="debrief-strengths" class="feedback-list"></ul>
+          </div>
+
+          <div class="feedback-card">
+            <h3><span style="color: var(--accent-amber);">→</span> Areas to Strengthen</h3>
+            <ul id="debrief-gaps" class="feedback-list"></ul>
+          </div>
+        </div>
+
+        <div class="feedback-card">
+          <h3><span style="color: var(--accent-cyan);">🚀</span> Recommended Next Steps</h3>
+          <ul id="debrief-next" class="feedback-list"></ul>
+        </div>
+
+        <div style="text-align: center; margin-top: 1rem;">
+          <button class="btn-primary" onclick="showView('view-selection')">
+            Start New Technical Interview →
+          </button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Error Toast -->
+  <div id="toast-error" class="toast-error">
+    <span id="toast-error-msg">An unexpected error occurred.</span>
+    <button class="btn-secondary" style="padding: 0.2rem 0.5rem; font-size: 0.75rem;" onclick="hideToast()">Dismiss</button>
+  </div>
+
+  <script>
+    // State Variables
+    let currentSessionId = null;
+    let selectedCandidate = null;
+    let turnCount = 0;
+    let isSubmitting = false;
+    let previousTurnsHistory = [];
+    let coveredTopicsList = ['Embeddings & Vector Search', 'Vector Indexes & Scaling', 'RAG & Retrieval Pipelines', 'Function Calling & Structured Outputs', 'Agent Orchestration & MCP'];
+
+    // Human Interviewer Transition Phrasing
+    const transitionPhrases = [
+      "Let's go one level deeper into system scale.",
+      "Let me probe deeper into that design choice.",
+      "Consider how that architecture handles high concurrency.",
+      "Let's make that scenario more realistic under production loads.",
+      "How would you optimize latency in that configuration?"
+    ];
+
+    // View Switching
+    function showView(viewId) {
+      document.querySelectorAll('.view-screen').forEach(v => v.classList.remove('active'));
+      const target = document.getElementById(viewId);
+      if (target) target.classList.add('active');
+
+      const candPill = document.getElementById('header-cand-pill');
+      const progressPill = document.getElementById('header-progress-pill');
+
+      if (viewId === 'view-interview') {
+        candPill.style.display = 'flex';
+        progressPill.style.display = 'flex';
+      } else if (viewId === 'view-completion') {
+        candPill.style.display = 'flex';
+        progressPill.style.display = 'none';
+      } else {
+        candPill.style.display = 'none';
+        progressPill.style.display = 'none';
+      }
+    }
+
+    function resetToLanding(e) {
+      if (e) e.preventDefault();
+      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+      currentSessionId = null;
+      selectedCandidate = null;
+      turnCount = 0;
+      previousTurnsHistory = [];
+      showView('view-landing');
+    }
+
+    // Load Candidates Roster (No raw performance stats exposed)
+    async function loadCandidates() {
+      try {
+        const res = await fetch('/api/candidates');
+        const data = await res.json();
+        const candidates = data.candidates || [];
+
+        const grid = document.getElementById('candidates-grid');
+        grid.innerHTML = '';
+
+        candidates.forEach(c => {
+          const m = c.member || {};
+          
+          const card = document.createElement('div');
+          card.className = 'candidate-card';
+          card.onclick = () => selectCandidate(c);
+
+          card.innerHTML = `
+            <div>
+              <div class="cand-header">
+                <div class="cand-info">
+                  <h3>${m.name || 'Candidate'}</h3>
+                  <div class="cand-role">${m.jobRole || 'Engineer'}</div>
+                </div>
+                <span class="cand-exp">${m.yearsExperience != null ? m.yearsExperience : 0} Yrs Exp</span>
+              </div>
+              <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 0.75rem;">${m.education || 'Computer Science'}</p>
+              <div style="font-size: 0.75rem; color: var(--accent-cyan); font-weight: 600;">Ready for Assessment →</div>
+            </div>
+          `;
+
+          grid.appendChild(card);
+        });
+      } catch (err) {
+        showToast('Failed to load candidate roster.');
+      }
+    }
+
+    // Select Candidate and Launch Session
+    async function selectCandidate(candidate) {
+      selectedCandidate = candidate;
+      const m = candidate.member || {};
+
+      document.getElementById('header-cand-name').textContent = m.name;
+      document.getElementById('header-cand-avatar').textContent = (m.name || 'C').split(' ').map(n => n[0]).join('').slice(0, 2);
+
+      document.getElementById('panel-cand-name').textContent = m.name;
+      document.getElementById('panel-cand-role').textContent = m.jobRole;
+      document.getElementById('panel-cand-edu').textContent = m.education;
+
+      document.getElementById('init-title').textContent = `Initializing Room for ${m.name}...`;
+      showView('view-init');
+
+      currentSessionId = `sess_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+      turnCount = 1;
+      previousTurnsHistory = [];
+
+      try {
+        const res = await fetch('/api/interview', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            sessionId: currentSessionId,
+            candidate: selectedCandidate
+          })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok || data.error) {
+          throw new Error(data.error || 'Failed to start session');
+        }
+
+        renderTurnResponse(data.reply);
+        showView('view-interview');
+      } catch (err) {
+        showToast(err.message || 'Error initializing interview session.');
+        showView('view-selection');
+      }
+    }
+
+    // Render Interviewer Question & Update States
+    function renderTurnResponse(questionReply) {
+      const qTextElem = document.getElementById('question-text');
+      qTextElem.textContent = questionReply;
+
+      // Clean topic label (no raw DAY numbers)
+      let cleanTopic = 'Embeddings & Vector Search';
+      if (turnCount > 1 && turnCount <= 3) cleanTopic = 'Vector Indexes & Scaling';
+      else if (turnCount > 3 && turnCount <= 5) cleanTopic = 'RAG & Retrieval Pipelines';
+      else if (turnCount > 5 && turnCount <= 7) cleanTopic = 'Function Calling & Structured Outputs';
+      else if (turnCount > 7) cleanTopic = 'Agent Orchestration & MCP';
+
+      document.getElementById('topic-label').textContent = cleanTopic;
+
+      // Update Question Progression (04 / 10+)
+      const formattedQNum = turnCount < 10 ? `0${turnCount}` : `${turnCount}`;
+      document.getElementById('header-progress-text').textContent = `Question ${formattedQNum} / 10+`;
+      const fillPct = Math.min(100, Math.round((turnCount / 10) * 100));
+      document.getElementById('progress-fill').style.width = `${fillPct}%`;
+
+      // Update Interview Map
+      updateInterviewMapUI(cleanTopic);
+
+      // Set Avatar State to ASKING
+      setAvatarState('state-asking', 'asking', 'ASKING');
+
+      // Re-enable composer & auto-focus
+      const textarea = document.getElementById('response-textarea');
+      textarea.disabled = false;
+      textarea.focus();
+      
+      const submitBtn = document.getElementById('btn-submit-answer');
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Submit Response →';
+      isSubmitting = false;
+
+      // Transition hint banner
+      const hint = transitionPhrases[(turnCount - 1) % transitionPhrases.length];
+      const hintBanner = document.getElementById('transition-hint-banner');
+      hintBanner.textContent = `"${hint}"`;
+      hintBanner.style.display = 'block';
+
+      // Auto-speak new question text if not muted
+      speakQuestion(questionReply);
+    }
+
+    // SpeechSynthesis TTS Implementation (Browser Native)
+    let isVoiceMuted = false;
+    let lastSpokenQuestionText = '';
+
+    function speakQuestion(text) {
+      if (isVoiceMuted || !('speechSynthesis' in window)) return;
+      if (!text || text === lastSpokenQuestionText) return;
+
+      try {
+        window.speechSynthesis.cancel();
+
+        // Strip greeting header or brackets for natural speech
+        const cleanText = text.replace(/^Welcome [^.!]+[.!]?\s*/i, '').trim();
+
+        const utterance = new SpeechSynthesisUtterance(cleanText);
+        utterance.rate = 0.95;
+        utterance.pitch = 1.0;
+
+        const voices = window.speechSynthesis.getVoices();
+        const prefVoice = voices.find(v => v.lang.startsWith('en') && (v.name.includes('Natural') || v.name.includes('Google') || v.name.includes('Samantha') || v.name.includes('Daniel') || v.name.includes('Alex'))) || voices.find(v => v.lang.startsWith('en'));
+        if (prefVoice) utterance.voice = prefVoice;
+
+        utterance.onstart = () => {
+          setAvatarState('state-speaking', 'speaking', 'SPEAKING');
+        };
+
+        utterance.onend = () => {
+          setAvatarState('state-asking', 'asking', 'ASKING');
+        };
+
+        utterance.onerror = () => {
+          setAvatarState('state-asking', 'asking', 'ASKING');
+        };
+
+        lastSpokenQuestionText = text;
+        window.speechSynthesis.speak(utterance);
+      } catch (err) {
+        // Fallback silently to text-only mode on error
+        setAvatarState('state-asking', 'asking', 'ASKING');
+      }
+    }
+
+    function replayQuestion() {
+      if (isVoiceMuted || !('speechSynthesis' in window)) return;
+      const currentQ = document.getElementById('question-text').textContent;
+      if (!currentQ) return;
+      lastSpokenQuestionText = '';
+      speakQuestion(currentQ);
+    }
+
+    function toggleVoiceMute() {
+      isVoiceMuted = !isVoiceMuted;
+      const btn = document.getElementById('btn-voice-toggle');
+      if (isVoiceMuted) {
+        if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+        btn.textContent = '🔇 Voice Off';
+        btn.classList.add('muted');
+        setAvatarState('state-asking', 'asking', 'ASKING');
+      } else {
+        btn.textContent = '🔊 Voice On';
+        btn.classList.remove('muted');
+      }
+    }
+
+    // Update Neural Avatar Visual State
+    function setAvatarState(ringClass, pillClass, stateText) {
+      const rings = document.getElementById('neural-avatar-rings');
+      rings.className = `neural-avatar-rings ${ringClass}`;
+
+      const pill = document.getElementById('state-pill');
+      pill.className = `state-pill ${pillClass}`;
+      pill.textContent = stateText;
+    }
+
+    // Interview Map UI Rendering
+    function updateInterviewMapUI(activeTopic) {
+      const mapList = document.getElementById('interview-map-list');
+      mapList.innerHTML = '';
+
+      coveredTopicsList.forEach(topic => {
+        const li = document.createElement('li');
+        let status = 'status-upcoming';
+        let badge = 'UPCOMING';
+
+        if (topic === activeTopic) {
+          status = 'status-active';
+          badge = 'ACTIVE';
+        } else if (coveredTopicsList.indexOf(topic) < coveredTopicsList.indexOf(activeTopic)) {
+          status = 'status-completed';
+          badge = 'COVERED';
+        }
+
+        li.className = `map-item ${status}`;
+        li.innerHTML = `
+          <span><span class="map-item-dot"></span>${topic}</span>
+          <span class="map-badge">${badge}</span>
+        `;
+        mapList.appendChild(li);
+      });
+    }
+
+    // Textarea Input & Keydown Listeners
+    function handleTextareaInput(e) {
+      const text = e.target.value;
+      const guidance = document.getElementById('char-guidance');
+      guidance.textContent = `${text.length.toLocaleString()} / 10,000 characters (Press Ctrl + Enter to submit)`;
+
+      if (text.trim().length > 0) {
+        setAvatarState('state-listening', 'listening', 'LISTENING');
+      }
+    }
+
+    function handleTextareaKeydown(e) {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault();
+        submitAnswer();
+      }
+    }
+
+    // Submit Candidate Answer (With Preservation on Network Failure!)
+    async function submitAnswer() {
+      if (isSubmitting || !currentSessionId) return;
+
+      const textarea = document.getElementById('response-textarea');
+      const text = textarea.value.trim();
+
+      if (!text) {
+        showToast('Please type your technical response before submitting.');
+        return;
+      }
+
+      isSubmitting = true;
+      textarea.disabled = true;
+
+      const submitBtn = document.getElementById('btn-submit-answer');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Evaluating...';
+
+      // Set Avatar State to THINKING
+      setAvatarState('state-thinking', 'thinking', 'THINKING');
+
+      // Update History
+      const currentQ = document.getElementById('question-text').textContent;
+      previousTurnsHistory.push({ question: currentQ, answer: text });
+      updateHistoryAccordionUI();
+
+      try {
+        const res = await fetch('/api/interview', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            sessionId: currentSessionId,
+            message: text
+          })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok || data.error) {
+          throw new Error(data.error || 'Failed to submit response');
+        }
+
+        // On clean success, clear textarea
+        textarea.value = '';
+        document.getElementById('char-guidance').textContent = '0 / 10,000 characters (Press Ctrl + Enter to submit)';
+
+        if (data.done && data.feedback) {
+          renderCompletionFeedback(data.feedback);
+          showView('view-completion');
+        } else {
+          turnCount += 1;
+          renderTurnResponse(data.reply);
+        }
+      } catch (err) {
+        showToast(err.message || 'Network error submitting answer. Your typed text has been preserved.');
+        // PRESERVE TYPED TEXT IF API FAILS!
+        textarea.disabled = false;
+        textarea.focus();
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Submit Response →';
+        isSubmitting = false;
+        setAvatarState('state-asking', 'asking', 'ASKING');
+      }
+    }
+
+    // Conversation History Accordion Toggle & UI Rendering
+    function toggleHistoryAccordion() {
+      const container = document.getElementById('history-turns-container');
+      const icon = document.getElementById('history-toggle-icon');
+      container.classList.toggle('open');
+      icon.textContent = container.classList.contains('open') ? '▲' : '▼';
+    }
+
+    function updateHistoryAccordionUI() {
+      document.getElementById('history-toggle-title').textContent = `CONVERSATION HISTORY (${previousTurnsHistory.length})`;
+
+      const container = document.getElementById('history-turns-container');
+      container.innerHTML = '';
+
+      [...previousTurnsHistory].reverse().forEach((turn, i) => {
+        const card = document.createElement('div');
+        card.className = 'turn-card';
+        card.innerHTML = `
+          <div class="q-title">Q: ${turn.question}</div>
+          <div class="a-text">A: ${turn.answer}</div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    // Render Completion Feedback Debrief
+    function renderCompletionFeedback(fb) {
+      document.getElementById('debrief-summary').textContent = fb.summary || 'Interview completed.';
+
+      const strList = document.getElementById('debrief-strengths');
+      strList.innerHTML = (fb.strengths || []).map(s => `<li><span class="icon-check">✓</span> ${s}</li>`).join('');
+
+      const gapList = document.getElementById('debrief-gaps');
+      gapList.innerHTML = (fb.gaps || []).map(g => `<li><span class="icon-gap">→</span> ${g}</li>`).join('');
+
+      const nextList = document.getElementById('debrief-next');
+      nextList.innerHTML = (fb.next || []).map((n, i) => `<li><span class="icon-next">${i + 1}.</span> ${n}</li>`).join('');
+    }
+
+    // Toast Error Banner
+    function showToast(msg) {
+      const toast = document.getElementById('toast-error');
+      document.getElementById('toast-error-msg').textContent = msg;
+      toast.classList.add('active');
+      setTimeout(() => hideToast(), 5000);
+    }
+
+    function hideToast() {
+      document.getElementById('toast-error').classList.remove('active');
+    }
+
+    // Initialize Page
+    window.addEventListener('DOMContentLoaded', () => {
+      loadCandidates();
+    });
+  </script>
+</body>
+</html>

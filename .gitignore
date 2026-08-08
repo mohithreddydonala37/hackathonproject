@@ -1,0 +1,22 @@
+# Environment & Secrets
+.env
+.env.local
+.env.production
+*.env
+
+# Dependencies
+node_modules/
+
+# Database & Storage
+*.db
+data/*.db
+
+# Logs
+*.log
+logs/
+
+# IDE & System
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
