@@ -1177,7 +1177,7 @@
           throw new Error(data.error || 'Failed to start session');
         }
 
-        renderTurnResponse(data.reply);
+        renderTurnResponse(data.reply, data.currentTopic);
         showView('view-interview');
       } catch (err) {
         showToast(err.message || 'Error initializing interview session.');
@@ -1186,16 +1186,20 @@
     }
 
     // Render Interviewer Question & Update States
-    function renderTurnResponse(questionReply) {
+    function renderTurnResponse(questionReply, currentTopic) {
       const qTextElem = document.getElementById('question-text');
       qTextElem.textContent = questionReply;
 
-      // Clean topic label (no raw DAY numbers)
-      let cleanTopic = 'Embeddings & Vector Search';
-      if (turnCount > 1 && turnCount <= 3) cleanTopic = 'Vector Indexes & Scaling';
-      else if (turnCount > 3 && turnCount <= 5) cleanTopic = 'RAG & Retrieval Pipelines';
-      else if (turnCount > 5 && turnCount <= 7) cleanTopic = 'Function Calling & Structured Outputs';
-      else if (turnCount > 7) cleanTopic = 'Agent Orchestration & MCP';
+      // Dynamically extract clean topic title from API currentTopic or question text
+      let cleanTopic = currentTopic;
+      if (!cleanTopic) {
+        const match = questionReply.match(/Question \d+ \(([^—)]+)/);
+        if (match && match[1]) {
+          cleanTopic = match[1].trim();
+        } else {
+          cleanTopic = 'Embeddings & Vector Search';
+        }
+      }
 
       document.getElementById('topic-label').textContent = cleanTopic;
 
@@ -1402,7 +1406,7 @@
           showView('view-completion');
         } else {
           turnCount += 1;
-          renderTurnResponse(data.reply);
+          renderTurnResponse(data.reply, data.currentTopic);
         }
       } catch (err) {
         showToast(err.message || 'Network error submitting answer. Your typed text has been preserved.');

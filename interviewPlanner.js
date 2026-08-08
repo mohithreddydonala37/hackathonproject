@@ -240,7 +240,7 @@ async function processSessionTurn(state, candidateMessage) {
     timestamp: new Date().toISOString(),
   });
 
-  return { reply: questionReply, done: false };
+  return { reply: questionReply, done: false, currentTopic: state.currentTopic };
 }
 
 /**

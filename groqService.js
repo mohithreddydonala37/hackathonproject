@@ -122,11 +122,47 @@ Formulate the interviewer response.`;
       operationName: 'generateInterviewerResponse'
     });
 
-    return (res && typeof res === 'string' && res.trim().length > 0) ? res.trim() : null;
+    if (res && typeof res === 'string' && res.trim().length > 0) {
+      const trimmed = res.trim();
+      if (validateTopicAlignment(trimmed, context.topic)) {
+        return trimmed;
+      } else {
+        console.warn(`[GroqService] LLM generated question failed topic alignment validation for topic "${context.topic}". Falling back.`);
+        return null;
+      }
+    }
+
+    return null;
   } catch (err) {
     console.warn('[GroqService] generateInterviewerResponse caught error, returning null fallback.');
     return null;
   }
+}
+
+/**
+ * Validates that generated question content aligns with the active target topic.
+ *
+ * @param {string} responseText - Generated interviewer question text
+ * @param {string} topicTitle - Active curriculum topic title
+ * @returns {boolean}
+ */
+function validateTopicAlignment(responseText, topicTitle) {
+  if (!responseText || typeof responseText !== 'string' || !topicTitle) return false;
+
+  const topicKeywords = topicTitle.toLowerCase().split(/[\s&/,\-_]+/).filter(w => w.length >= 4);
+  if (topicKeywords.length === 0) return true;
+
+  const textLower = responseText.toLowerCase();
+  
+  // Topic keywords check or generic technical conversation check
+  const hasKeyword = topicKeywords.some(kw => textLower.includes(kw));
+  if (hasKeyword) return true;
+
+  // Allow if question explicitly addresses general engineering trade-offs or architecture
+  const generalTechTerms = ['architecture', 'design', 'system', 'trade-off', 'implementation', 'scale', 'production', 'challenge'];
+  const hasTechTerm = generalTechTerms.some(term => textLower.includes(term));
+
+  return hasTechTerm;
 }
 
 /**
